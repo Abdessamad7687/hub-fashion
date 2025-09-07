@@ -3,8 +3,9 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Eye } from "lucide-react"
+import { Plus, Edit, Eye } from "lucide-react"
 import { config } from "@/lib/config"
+import DeleteProductDialog from "@/components/admin/delete-product-dialog"
 
 async function fetchProducts() {
   const res = await fetch(`${config.api.baseUrl}/api/products`, { cache: "no-store" })
@@ -77,6 +78,44 @@ export default async function ProductsPage() {
                     </Badge>
                   </div>
                   
+                  {/* Colors */}
+                  {product.colors && product.colors.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-xs font-medium text-muted-foreground">Colors:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {product.colors.slice(0, 3).map((color: any, index: number) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {color.color}
+                          </Badge>
+                        ))}
+                        {product.colors.length > 3 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{product.colors.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Sizes */}
+                  {product.sizes && product.sizes.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-xs font-medium text-muted-foreground">Sizes:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {product.sizes.slice(0, 4).map((size: any, index: number) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {size.size}
+                          </Badge>
+                        ))}
+                        {product.sizes.length > 4 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{product.sizes.length - 4}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex gap-2">
                     <Button asChild variant="outline" size="sm" className="flex-1">
                       <Link href={`/admin/products/${product.id}/edit`}>
@@ -90,9 +129,10 @@ export default async function ProductsPage() {
                         View
                       </Link>
                     </Button>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <DeleteProductDialog 
+                      productId={product.id} 
+                      productName={product.name} 
+                    />
                   </div>
                 </div>
               </CardContent>

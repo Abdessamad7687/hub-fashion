@@ -60,7 +60,43 @@ export default async function SearchResults({ query, category, sort, price }: Se
                 <h3 className="font-medium">{product.name}</h3>
               </Link>
               <p className="mt-1 text-sm text-muted-foreground">{product.category}</p>
-              <div className="mt-2 flex items-center justify-between">
+              
+              {/* Colors and Sizes */}
+              <div className="mt-2 space-y-1">
+                {product.colors && product.colors.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">Colors:</span>
+                    <div className="flex gap-1">
+                      {product.colors.slice(0, 2).map((color: any, index: number) => (
+                        <span key={index} className="text-xs bg-secondary px-1.5 py-0.5 rounded">
+                          {color.color}
+                        </span>
+                      ))}
+                      {product.colors.length > 2 && (
+                        <span className="text-xs text-muted-foreground">+{product.colors.length - 2}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {product.sizes && product.sizes.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">Sizes:</span>
+                    <div className="flex gap-1">
+                      {product.sizes.slice(0, 3).map((size: any, index: number) => (
+                        <span key={index} className="text-xs border px-1.5 py-0.5 rounded">
+                          {size.size}
+                        </span>
+                      ))}
+                      {product.sizes.length > 3 && (
+                        <span className="text-xs text-muted-foreground">+{product.sizes.length - 3}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-3 flex items-center justify-between">
                 <div>
                   {product.originalPrice ? (
                     <div className="flex items-center gap-2">

@@ -17,6 +17,20 @@ function getCategoryImage(categoryName: string): string {
   return categoryImages[categoryName] || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
 }
 
+// Helper function to generate category slug
+function getCategorySlug(categoryName: string): string {
+  const slugMap: { [key: string]: string } = {
+    "Homme": "men",
+    "Femme": "women", 
+    "Enfant": "kids",
+    "Accessoires": "accessories",
+    "Chaussures": "shoes",
+    "Sacs": "bags"
+  }
+  
+  return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-')
+}
+
 async function fetchCategories() {
   const res = await fetch(`${config.api.baseUrl}${config.api.categories}`, { cache: "no-store" })
   if (!res.ok) return []
@@ -31,7 +45,7 @@ export default async function CategoryGrid() {
       {categories.map((category: any) => (
         <Link
           key={category.id}
-          href={`/categories/${category.id}`}
+          href={`/categories/${getCategorySlug(category.name)}`}
           className="group relative overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
         >
           <div className="aspect-[3/4] w-full overflow-hidden">

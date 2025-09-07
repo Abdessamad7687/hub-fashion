@@ -3,8 +3,23 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Eye } from "lucide-react"
+import { Plus, Edit, Eye } from "lucide-react"
 import { config } from "@/lib/config"
+import DeleteCategoryDialog from "@/components/admin/delete-category-dialog"
+
+// Helper function to generate category slug
+function getCategorySlug(categoryName: string): string {
+  const slugMap: { [key: string]: string } = {
+    "Homme": "men",
+    "Femme": "women", 
+    "Enfant": "kids",
+    "Accessoires": "accessories",
+    "Chaussures": "shoes",
+    "Sacs": "bags"
+  }
+  
+  return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-')
+}
 
 async function fetchCategories() {
   const res = await fetch(`${config.api.baseUrl}/api/categories`, { cache: "no-store" })
@@ -79,14 +94,15 @@ export default async function CategoriesPage() {
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="sm" className="flex-1">
-                    <Link href={`/categories/${category.id}`} target="_blank">
+                    <Link href={`/categories/${getCategorySlug(category.name)}`} target="_blank">
                       <Eye className="mr-2 h-4 w-4" />
                       View
                     </Link>
                   </Button>
-                  <Button variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <DeleteCategoryDialog 
+                    categoryId={category.id} 
+                    categoryName={category.name} 
+                  />
                 </div>
               </CardContent>
             </Card>

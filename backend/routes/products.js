@@ -5,23 +5,76 @@ const router = express.Router();
 
 // Get all products with filters
 router.get('/', async (req, res) => {
-  const { category, minPrice, maxPrice, gender, size, search } = req.query;
+  const { category, minPrice, maxPrice, gender, size, sizes, colors, price, search, sort } = req.query;
   const where = {};
+  
+  // Category filter
   if (category) where.categoryId = category;
+  
+  // Gender filter
   if (gender) where.gender = gender;
-  if (minPrice || maxPrice) where.price = {};
-  if (minPrice) where.price.gte = parseFloat(minPrice);
-  if (maxPrice) where.price.lte = parseFloat(maxPrice);
+  
+  // Price filter - handle both individual min/max and range format
+  if (price) {
+    const [min, max] = price.split('-').map(p => parseFloat(p));
+    where.price = {};
+    if (min) where.price.gte = min;
+    if (max) where.price.lte = max;
+  } else {
+    if (minPrice || maxPrice) where.price = {};
+    if (minPrice) where.price.gte = parseFloat(minPrice);
+    if (maxPrice) where.price.lte = parseFloat(maxPrice);
+  }
+  
+  // Search filter
   if (search) where.OR = [
     { name: { contains: search, mode: 'insensitive' } },
     { description: { contains: search, mode: 'insensitive' } }
   ];
-  // Filter by size (products that have at least one ProductSize with the given size)
-  if (size) {
+  
+  // Size filter - handle both single size and multiple sizes
+  if (sizes) {
+    const sizeArray = sizes.split(',');
+    where.sizes = { some: { size: { in: sizeArray } } };
+  } else if (size) {
     where.sizes = { some: { size: size } };
   }
+  
+  // Color filter - handle multiple colors
+  if (colors) {
+    const colorArray = colors.split(',');
+    where.colors = { some: { color: { in: colorArray } } };
+  }
+  
+  // Build orderBy for sorting
+  let orderBy = {};
+  if (sort) {
+    switch (sort) {
+      case 'price-asc':
+        orderBy = { price: 'asc' };
+        break;
+      case 'price-desc':
+        orderBy = { price: 'desc' };
+        break;
+      case 'name-asc':
+        orderBy = { name: 'asc' };
+        break;
+      case 'name-desc':
+        orderBy = { name: 'desc' };
+        break;
+      case 'newest':
+        orderBy = { createdAt: 'desc' };
+        break;
+      default:
+        orderBy = { createdAt: 'desc' };
+    }
+  } else {
+    orderBy = { createdAt: 'desc' };
+  }
+  
   const products = await prisma.product.findMany({
     where,
+    orderBy,
     include: { images: true, sizes: true, colors: true, features: true, category: true }
   });
   res.json(products);

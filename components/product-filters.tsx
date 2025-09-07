@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -8,43 +8,140 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
+import { config } from "@/lib/config"
 
 export default function ProductFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const [priceRange, setPriceRange] = useState([0, 200])
+  const [categories, setCategories] = useState([])
+  const [colors, setColors] = useState([])
+  const [sizes, setSizes] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const categories = [
-    { id: "men", label: "Men's Clothing" },
-    { id: "women", label: "Women's Clothing" },
-    { id: "accessories", label: "Accessories" },
-    { id: "footwear", label: "Footwear" },
-  ]
+  // Helper function to generate category slug
+  const getCategorySlug = (categoryName: string): string => {
+    const slugMap: { [key: string]: string } = {
+      "Homme": "men",
+      "Femme": "women", 
+      "Enfant": "kids",
+      "Accessoires": "accessories",
+      "Chaussures": "shoes",
+      "Sacs": "bags"
+    }
+    
+    return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-')
+  }
 
-  const colors = [
-    { id: "black", label: "Black" },
-    { id: "white", label: "White" },
-    { id: "blue", label: "Blue" },
-    { id: "red", label: "Red" },
-    { id: "green", label: "Green" },
-  ]
+  useEffect(() => {
+    const fetchFilterData = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch categories
+        const categoriesRes = await fetch(`${config.api.baseUrl}/api/categories`)
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json()
+          setCategories(categoriesData.map((cat: any) => ({
+            id: getCategorySlug(cat.name),
+            label: cat.name,
+            originalId: cat.id
+          })))
+        }
 
-  const sizes = [
-    { id: "xs", label: "XS" },
-    { id: "s", label: "S" },
-    { id: "m", label: "M" },
-    { id: "l", label: "L" },
-    { id: "xl", label: "XL" },
-  ]
+        // Fetch products to get colors and sizes
+        const productsRes = await fetch(`${config.api.baseUrl}/api/products`)
+        if (productsRes.ok) {
+          const productsData = await productsRes.json()
+          
+          // Extract unique colors
+          const uniqueColors = new Set()
+          const uniqueSizes = new Set()
+          let maxPrice = 0
+          
+          productsData.forEach((product: any) => {
+            if (product.price > maxPrice) maxPrice = product.price
+            
+            product.colors?.forEach((color: any) => {
+              uniqueColors.add(color.color)
+            })
+            
+            product.sizes?.forEach((size: any) => {
+              uniqueSizes.add(size.size)
+            })
+          })
+          
+          setColors(Array.from(uniqueColors).map((color: string) => ({
+            id: color.toLowerCase(),
+            label: color
+          })))
+          
+          setSizes(Array.from(uniqueSizes).map((size: string) => ({
+            id: size.toLowerCase(),
+            label: size
+          })))
+          
+          // Update price range based on actual data
+          setPriceRange([0, Math.ceil(maxPrice)])
+        }
+      } catch (error) {
+        console.error('Error fetching filter data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const handleCategoryChange = (categoryId) => {
+    fetchFilterData()
+  }, [])
+
+  const handleCategoryChange = (categoryId: string) => {
     const params = new URLSearchParams(searchParams)
-    params.set("category", categoryId)
+    if (params.get("category") === categoryId) {
+      params.delete("category")
+    } else {
+      params.set("category", categoryId)
+    }
     router.push(`/products?${params.toString()}`)
   }
 
-  const handlePriceChange = (values) => {
+  const handleColorChange = (colorId: string) => {
+    const params = new URLSearchParams(searchParams)
+    const currentColors = params.get("colors")?.split(",") || []
+    
+    if (currentColors.includes(colorId)) {
+      const newColors = currentColors.filter(c => c !== colorId)
+      if (newColors.length > 0) {
+        params.set("colors", newColors.join(","))
+      } else {
+        params.delete("colors")
+      }
+    } else {
+      params.set("colors", [...currentColors, colorId].join(","))
+    }
+    
+    router.push(`/products?${params.toString()}`)
+  }
+
+  const handleSizeChange = (sizeId: string) => {
+    const params = new URLSearchParams(searchParams)
+    const currentSizes = params.get("sizes")?.split(",") || []
+    
+    if (currentSizes.includes(sizeId)) {
+      const newSizes = currentSizes.filter(s => s !== sizeId)
+      if (newSizes.length > 0) {
+        params.set("sizes", newSizes.join(","))
+      } else {
+        params.delete("sizes")
+      }
+    } else {
+      params.set("sizes", [...currentSizes, sizeId].join(","))
+    }
+    
+    router.push(`/products?${params.toString()}`)
+  }
+
+  const handlePriceChange = (values: number[]) => {
     setPriceRange(values)
   }
 
@@ -57,6 +154,21 @@ export default function ProductFilters() {
   const resetFilters = () => {
     router.push("/products")
     setPriceRange([0, 200])
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Filters</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="h-4 bg-muted rounded animate-pulse"></div>
+          <div className="h-4 bg-muted rounded animate-pulse"></div>
+          <div className="h-4 bg-muted rounded animate-pulse"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -109,14 +221,23 @@ export default function ProductFilters() {
           <AccordionTrigger>Color</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
-              {colors.map((color) => (
-                <div key={color.id} className="flex items-center space-x-2">
-                  <Checkbox id={`color-${color.id}`} />
-                  <Label htmlFor={`color-${color.id}`} className="text-sm font-normal">
-                    {color.label}
-                  </Label>
-                </div>
-              ))}
+              {colors.map((color) => {
+                const currentColors = searchParams.get("colors")?.split(",") || []
+                const isChecked = currentColors.includes(color.id)
+                
+                return (
+                  <div key={color.id} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`color-${color.id}`}
+                      checked={isChecked}
+                      onCheckedChange={() => handleColorChange(color.id)}
+                    />
+                    <Label htmlFor={`color-${color.id}`} className="text-sm font-normal">
+                      {color.label}
+                    </Label>
+                  </div>
+                )
+              })}
             </div>
           </AccordionContent>
         </AccordionItem>
@@ -125,14 +246,23 @@ export default function ProductFilters() {
           <AccordionTrigger>Size</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
-              {sizes.map((size) => (
-                <div key={size.id} className="flex items-center space-x-2">
-                  <Checkbox id={`size-${size.id}`} />
-                  <Label htmlFor={`size-${size.id}`} className="text-sm font-normal">
-                    {size.label}
-                  </Label>
-                </div>
-              ))}
+              {sizes.map((size) => {
+                const currentSizes = searchParams.get("sizes")?.split(",") || []
+                const isChecked = currentSizes.includes(size.id)
+                
+                return (
+                  <div key={size.id} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`size-${size.id}`}
+                      checked={isChecked}
+                      onCheckedChange={() => handleSizeChange(size.id)}
+                    />
+                    <Label htmlFor={`size-${size.id}`} className="text-sm font-normal">
+                      {size.label}
+                    </Label>
+                  </div>
+                )
+              })}
             </div>
           </AccordionContent>
         </AccordionItem>

@@ -4,6 +4,20 @@ import { Metadata } from 'next'
 
 import { config } from "@/lib/config"
 
+// Helper function to generate category slug
+function getCategorySlug(categoryName: string): string {
+  const slugMap: { [key: string]: string } = {
+    "Homme": "men",
+    "Femme": "women", 
+    "Enfant": "kids",
+    "Accessoires": "accessories",
+    "Chaussures": "shoes",
+    "Sacs": "bags"
+  }
+  
+  return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-')
+}
+
 async function fetchCategories() {
   try {
     const res = await fetch(`${config.api.baseUrl}${config.api.categories}`, { cache: "no-store" })
@@ -50,7 +64,7 @@ export default async function CategoriesPage() {
         {categories.map((category: any) => (
           <Link
             key={category.id}
-            href={`/categories/${category.name.toLowerCase()}`}
+            href={`/categories/${getCategorySlug(category.name)}`}
             className="group relative overflow-hidden rounded-lg border transition-all hover:shadow-lg"
           >
             <div className="aspect-[3/4] w-full overflow-hidden">

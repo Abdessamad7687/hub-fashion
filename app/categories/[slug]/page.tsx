@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import ProductGrid from '@/components/product-grid'
 import ProductFilters from '@/components/product-filters'
 
@@ -14,6 +15,9 @@ const categorySlugMap: { [key: string]: string } = {
   'men': 'Homme',
   'women': 'Femme',
   'kids': 'Enfant',
+  'accessories': 'Accessoires',
+  'shoes': 'Chaussures',
+  'bags': 'Sacs',
   'enfant': 'Enfant',
   'homme': 'Homme',
   'femme': 'Femme'
@@ -23,12 +27,38 @@ import { config } from "@/lib/config"
 
 async function fetchCategory(slug: string) {
   try {
-    // First try to find by the mapped category name
+    // Check if the slug looks like an ID (long alphanumeric string)
+    const isId = /^[a-zA-Z0-9]{20,}$/.test(slug)
+    
+    if (isId) {
+      // If it's an ID, fetch directly by ID
+      const res = await fetch(`${config.api.baseUrl}/api/categories/${slug}`, { cache: 'no-store' })
+      if (res.ok) {
+        return res.json()
+      }
+    }
+    
+    // Try to find by the mapped category name
     const categoryName = categorySlugMap[slug.toLowerCase()] || slug
-    const res = await fetch(`${config.api.baseUrl}/api/categories/slug/${encodeURIComponent(categoryName)}`, { cache: 'no-store' })
-    if (!res.ok) return null
+    
+    // Try to fetch by slug first
+    let res = await fetch(`${config.api.baseUrl}/api/categories/slug/${encodeURIComponent(categoryName)}`, { cache: 'no-store' })
+    
+    if (!res.ok) {
+      // If slug doesn't work, try to fetch all categories and find by name
+      const allCategoriesRes = await fetch(`${config.api.baseUrl}/api/categories`, { cache: 'no-store' })
+      if (!allCategoriesRes.ok) return null
+      
+      const allCategories = await allCategoriesRes.json()
+      const category = allCategories.find((cat: any) => 
+        cat.name.toLowerCase() === categoryName.toLowerCase()
+      )
+      return category || null
+    }
+    
     return res.json()
   } catch (error) {
+    console.error('Error fetching category:', error)
     return null
   }
 }
@@ -87,11 +117,23 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
       <div className="mb-8">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{category.name}</h1>
-            {category.description && (
-              <p className="mt-2 text-muted-foreground">{category.description}</p>
+          <div className="flex items-center gap-6">
+            {category.image && (
+              <div className="relative w-20 h-20 rounded-lg overflow-hidden">
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
             )}
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{category.name}</h1>
+              {category.description && (
+                <p className="mt-2 text-muted-foreground">{category.description}</p>
+              )}
+            </div>
           </div>
           <Link 
             href="/categories" 

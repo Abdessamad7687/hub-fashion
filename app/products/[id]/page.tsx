@@ -34,20 +34,16 @@ export default async function ProductPage({ params }: { params: { id: string } }
   }
   const product = await res.json()
 
-  // Mock additional product data
+  // Use real API data
   const productDetails = {
     ...product,
     rating: 4.5,
     reviewCount: 128,
     inStock: product.stock > 0,
     stockCount: product.stock,
-    sizes: product.sizes?.map((s: any) => s.size) || ["S", "M", "L"],
-    colors: [
-      { name: "Black", value: "#000000" },
-      { name: "White", value: "#FFFFFF" },
-      { name: "Navy", value: "#1E3A8A" },
-    ],
-    features: ["Premium cotton blend", "Machine washable", "Comfortable fit", "Durable construction"],
+    sizes: product.sizes?.map((s: any) => s.size) || [],
+    colors: product.colors?.map((c: any) => ({ name: c.color, value: c.color })) || [],
+    features: product.features?.map((f: any) => `${f.name}: ${f.value}`) || [],
     specifications: {
       Material: "60% Cotton, 40% Polyester",
       "Care Instructions": "Machine wash cold, tumble dry low",

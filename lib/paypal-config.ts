@@ -1,9 +1,7 @@
 // PayPal Sandbox Configuration
-// Replace these with your actual PayPal Sandbox credentials
 export const paypalConfig = {
   // PayPal Sandbox Client ID
-  // Get this from: https://developer.paypal.com/dashboard/
-  clientId: "test", // Change this to your actual sandbox client ID
+  clientId: "AZw_rxzLR8GvfSrJVTp82xYweClTNFVOYub08l0CEJNzoODmzgIH_YtR_W0fMLBK3xKZ87RmcRtw_4iv",
   
   // Environment: 'sandbox' for testing, 'production' for live
   environment: "sandbox" as "sandbox" | "production",
@@ -28,11 +26,12 @@ export const paypalTestAccounts = {
   },
 }
 
-// Instructions for setting up PayPal Sandbox:
-// 1. Go to https://developer.paypal.com/
-// 2. Sign up for a developer account
-// 3. Go to Dashboard > My Apps & Credentials
-// 4. Create a new app for Sandbox
-// 5. Copy the Client ID and replace 'test' above
-// 6. Use the test accounts above to simulate payments
+// Instructions for PayPal Sandbox Testing:
+// 1. Your PayPal Sandbox is already configured with valid credentials
+// 2. Use these test accounts to simulate payments:
+//    - Buyer: sb-buyer@business.example.com / 12345678
+//    - Seller: sb-seller@business.example.com / 12345678
+// 3. The PayPal button will appear in sandbox mode
+// 4. All transactions are test transactions and won't charge real money
+// 5. Check PayPal Developer Dashboard for transaction logs
 

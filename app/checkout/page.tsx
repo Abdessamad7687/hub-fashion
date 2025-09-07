@@ -4,12 +4,11 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CreditCard, Truck, Shield } from "lucide-react"
+import { Truck, Shield } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,7 +18,6 @@ import { useOrders } from "@/lib/order-context"
 import { useToast } from "@/components/ui/use-toast"
 import CheckoutSummary from "@/components/checkout-summary"
 import PayPalButton from "@/components/paypal-button"
-import DemoCardPayment from "@/components/demo-card-payment"
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -29,7 +27,7 @@ export default function CheckoutPage() {
   const { toast } = useToast()
 
   const [step, setStep] = useState("shipping")
-  const [paymentMethod, setPaymentMethod] = useState("card")
+  const [paymentMethod, setPaymentMethod] = useState("paypal")
   const [isProcessing, setIsProcessing] = useState(false)
   const [formData, setFormData] = useState({
     firstName: "",
@@ -42,10 +40,6 @@ export default function CheckoutPage() {
     state: "",
     zipCode: "",
     country: "United States",
-    cardName: "",
-    cardNumber: "",
-    expiry: "",
-    cvc: "",
   })
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -89,9 +83,8 @@ export default function CheckoutPage() {
   }
 
   const validatePaymentForm = () => {
-    if (paymentMethod === "paypal" || paymentMethod === "demo-card") return true
-    const required = ["cardName", "cardNumber", "expiry", "cvc"]
-    return required.every((field) => formData[field as keyof typeof formData].trim() !== "")
+    // PayPal is the only payment method, so always return true
+    return true
   }
 
   const handleShippingSubmit = (e: React.FormEvent) => {
@@ -151,21 +144,6 @@ export default function CheckoutPage() {
     }
   }
 
-  const handleCardPayment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validatePaymentForm()) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required payment fields.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Simulate card processing
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    await processOrder()
-  }
 
   const handlePayPalSuccess = async (details: any) => {
     toast({
@@ -211,7 +189,7 @@ export default function CheckoutPage() {
             >
               2
             </div>
-            <span className="font-medium">Payment</span>
+            <span className="font-medium">PayPal</span>
           </div>
         </div>
       </div>
@@ -256,10 +234,6 @@ export default function CheckoutPage() {
                                   state: "",
                                   zipCode: "",
                                   country: "United States",
-                                  cardName: "",
-                                  cardNumber: "",
-                                  expiry: "",
-                                  cvc: "",
                                 })}
                                 className="text-xs text-blue-600 hover:text-blue-800 underline"
                               >
@@ -401,7 +375,7 @@ export default function CheckoutPage() {
                         </label>
                       </div>
                       <Button type="submit" size="lg">
-                        Continue to Payment
+                        Continue to PayPal
                       </Button>
                     </div>
                   </form>
@@ -413,121 +387,41 @@ export default function CheckoutPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    Payment Method
+                    <Shield className="h-5 w-5 text-green-600" />
+                    Pay with PayPal
                   </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Complete your purchase securely with PayPal. No real charges will be made in sandbox mode.
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="card" id="card" />
-                      <Label htmlFor="card">Credit / Debit Card (Real)</Label>
+                  <div className="rounded-lg border-2 border-green-200 bg-green-50 p-6">
+                    <div className="mb-4 flex items-center gap-2">
+                      <Shield className="h-6 w-6 text-green-600" />
+                      <span className="text-lg font-semibold text-green-800">PayPal Sandbox Payment</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="demo-card" id="demo-card" />
-                      <Label htmlFor="demo-card">Demo Card Payment</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="paypal" id="paypal" />
-                      <Label htmlFor="paypal">PayPal Sandbox</Label>
-                    </div>
-                  </RadioGroup>
-
-                  {paymentMethod === "card" && (
-                    <form onSubmit={handleCardPayment} className="space-y-4">
-                      <div>
-                        <Label htmlFor="cardName">Name on Card *</Label>
-                        <Input
-                          id="cardName"
-                          name="cardName"
-                          value={formData.cardName}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="cardNumber">Card Number *</Label>
-                        <Input
-                          id="cardNumber"
-                          name="cardNumber"
-                          placeholder="1234 5678 9012 3456"
-                          value={formData.cardNumber}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="expiry">Expiry Date *</Label>
-                          <Input
-                            id="expiry"
-                            name="expiry"
-                            placeholder="MM/YY"
-                            value={formData.expiry}
-                            onChange={handleInputChange}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="cvc">CVC *</Label>
-                          <Input
-                            id="cvc"
-                            name="cvc"
-                            placeholder="123"
-                            value={formData.cvc}
-                            onChange={handleInputChange}
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between pt-4">
-                        <Button type="button" variant="outline" onClick={() => setStep("shipping")}>
-                          Back to Shipping
-                        </Button>
-                        <Button type="submit" size="lg" disabled={isProcessing}>
-                          {isProcessing ? "Processing..." : `Pay $${total.toFixed(2)}`}
-                        </Button>
-                      </div>
-                    </form>
-                  )}
-
-                  {paymentMethod === "demo-card" && (
-                    <div className="space-y-4">
-                      <DemoCardPayment
+                    <p className="text-sm text-green-700 mb-4">
+                      Use PayPal Sandbox for testing. No real charges will be made.
+                    </p>
+                    <div className="bg-white rounded-lg p-4 border border-green-200">
+                      <PayPalButton
                         amount={total}
                         onSuccess={handlePayPalSuccess}
                         onError={handlePayPalError}
-                        onCancel={() => setStep("shipping")}
+                        onCancel={() => console.log("PayPal payment cancelled")}
                       />
                     </div>
-                  )}
+                  </div>
 
-                  {paymentMethod === "paypal" && (
-                    <div className="space-y-4">
-                      <div className="rounded-lg border p-4">
-                        <div className="mb-4 flex items-center gap-2">
-                          <Shield className="h-5 w-5 text-green-600" />
-                          <span className="text-sm font-medium">PayPal Sandbox Payment</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-4">
-                          Use PayPal Sandbox for testing. No real charges will be made.
-                        </p>
-                        <PayPalButton
-                          amount={total}
-                          onSuccess={handlePayPalSuccess}
-                          onError={handlePayPalError}
-                          onCancel={() => console.log("PayPal payment cancelled")}
-                        />
-                      </div>
-
-                      <div className="flex justify-start">
-                        <Button type="button" variant="outline" onClick={() => setStep("shipping")}>
-                          Back to Shipping
-                        </Button>
-                      </div>
+                  <div className="flex justify-between pt-4">
+                    <Button type="button" variant="outline" onClick={() => setStep("shipping")}>
+                      Back to Shipping
+                    </Button>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Total Amount</p>
+                      <p className="text-2xl font-bold">${total.toFixed(2)}</p>
                     </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

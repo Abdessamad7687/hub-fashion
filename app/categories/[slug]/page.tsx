@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ProductGrid from '@/components/product-grid'
 import ProductFilters from '@/components/product-filters'
+import { ResponsiveBreadcrumb } from '@/components/responsive-breadcrumb'
 
 interface CategoryPageProps {
   params: { slug: string }
@@ -12,15 +13,15 @@ interface CategoryPageProps {
 
 
 const categorySlugMap: { [key: string]: string } = {
-  'men': 'Homme',
-  'women': 'Femme',
-  'kids': 'Enfant',
-  'accessories': 'Accessoires',
-  'shoes': 'Chaussures',
-  'bags': 'Sacs',
-  'enfant': 'Enfant',
-  'homme': 'Homme',
-  'femme': 'Femme'
+  'men': 'Men',
+  'women': 'Women',
+  'kids': 'Kids',
+  'accessories': 'Accessories',
+  'shoes': 'Shoes',
+  'bags': 'Bags',
+  'enfant': 'Kids',
+  'homme': 'Men',
+  'femme': 'Women'
 }
 
 import { config } from "@/lib/config"
@@ -38,25 +39,19 @@ async function fetchCategory(slug: string) {
       }
     }
     
-    // Try to find by the mapped category name
-    const categoryName = categorySlugMap[slug.toLowerCase()] || slug
+    // Fetch all categories and find the one that matches our slug
+    const allCategoriesRes = await fetch(`${config.api.baseUrl}/api/categories`, { cache: 'no-store' })
+    if (!allCategoriesRes.ok) return null
     
-    // Try to fetch by slug first
-    let res = await fetch(`${config.api.baseUrl}/api/categories/slug/${encodeURIComponent(categoryName)}`, { cache: 'no-store' })
+    const allCategories = await allCategoriesRes.json()
     
-    if (!res.ok) {
-      // If slug doesn't work, try to fetch all categories and find by name
-      const allCategoriesRes = await fetch(`${config.api.baseUrl}/api/categories`, { cache: 'no-store' })
-      if (!allCategoriesRes.ok) return null
-      
-      const allCategories = await allCategoriesRes.json()
-      const category = allCategories.find((cat: any) => 
-        cat.name.toLowerCase() === categoryName.toLowerCase()
-      )
-      return category || null
-    }
+    // Find category by slug mapping
+    const category = allCategories.find((cat: any) => {
+      const mappedSlug = categorySlugMap[cat.name] || cat.name.toLowerCase().replace(/\s+/g, '-')
+      return mappedSlug === slug.toLowerCase()
+    })
     
-    return res.json()
+    return category || null
   } catch (error) {
     console.error('Error fetching category:', error)
     return null
@@ -104,16 +99,15 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   const products = await fetchProducts(category.id, searchParams)
 
+  // Generate breadcrumb items
+  const breadcrumbItems = [
+    { label: "Categories", href: "/categories" },
+    { label: category.name }
+  ]
+
   return (
     <div className="container py-8">
-      {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center space-x-2 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-foreground">Home</Link>
-        <span>/</span>
-        <Link href="/categories" className="hover:text-foreground">Categories</Link>
-        <span>/</span>
-        <span className="text-foreground">{category.name}</span>
-      </nav>
+      <ResponsiveBreadcrumb items={breadcrumbItems} />
 
       <div className="mb-8">
         <div className="flex items-center justify-between">

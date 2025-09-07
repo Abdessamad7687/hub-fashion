@@ -47,10 +47,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = async () => {
     try {
       const token = localStorage.getItem('auth-token')
-      const headers: HeadersInit = {}
       
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
+      // If no token, user is not authenticated
+      if (!token) {
+        console.log('No token found, user not authenticated')
+        setUser(null)
+        setIsAuthenticated(false)
+        setIsLoading(false)
+        return
+      }
+      
+      const headers: HeadersInit = {
+        'Authorization': `Bearer ${token}`
       }
       
       console.log('CheckAuth attempt:', { apiUrl: config.api.baseUrl, hasToken: !!token })
@@ -64,12 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user)
         setIsAuthenticated(true)
       } else {
+        console.log('Auth check failed, clearing token')
         setUser(null)
         setIsAuthenticated(false)
-        // Clear invalid token
-        if (token) {
-          localStorage.removeItem('auth-token')
-        }
+        localStorage.removeItem('auth-token')
       }
     } catch (error) {
       console.error("Auth check failed:", error)
@@ -90,6 +96,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     return () => clearTimeout(timer)
   }, [])
+
+  // Add a cleanup effect to ensure state consistency
+  useEffect(() => {
+    if (hasMounted) {
+      const token = localStorage.getItem('auth-token')
+      if (!token && isAuthenticated) {
+        console.log('Token missing but user appears authenticated, clearing state')
+        clearAuthState()
+      }
+    }
+  }, [hasMounted, isAuthenticated])
 
   const login = async (email: string, password: string) => {
     console.log('Login attempt:', { email, apiUrl: config.api.baseUrl })
@@ -119,9 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Store token from Authorization header as fallback
     const authHeader = response.headers.get('Authorization')
+    console.log('Login response auth header:', authHeader)
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '')
+      console.log('Storing token in localStorage:', token.substring(0, 20) + '...')
       localStorage.setItem('auth-token', token)
+    } else {
+      console.warn('No Authorization header in login response')
     }
 
     setUser(data.user)
@@ -163,11 +184,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const clearAuthState = () => {
+    console.log('Clearing auth state due to inconsistency')
+    setUser(null)
+    setIsAuthenticated(false)
+    localStorage.removeItem('auth-token')
+  }
+
   const updateProfile = async (data: ProfileData) => {
     console.log('Updating profile with data:', data);
     console.log('Current auth state:', { isAuthenticated, user });
     
-    // First check if we're still authenticated
+    // Get the token from localStorage first
+    const token = localStorage.getItem('auth-token');
+    console.log('Token from localStorage:', token ? 'Found' : 'Not found');
+    
+    // If no token, user needs to login
+    if (!token) {
+      console.log('No token found, clearing auth state and redirecting to login');
+      clearAuthState();
+      throw new Error('Please login to update your profile');
+    }
+    
+    // If we have a token but no user state, try to verify it
     if (!isAuthenticated || !user) {
       console.log('User not authenticated, checking auth...');
       await checkAuth();
@@ -176,10 +215,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     
+    // Double-check that we still have a token after auth check
+    const currentToken = localStorage.getItem('auth-token');
+    if (!currentToken) {
+      console.log('Token lost during auth check, redirecting to login');
+      clearAuthState();
+      throw new Error('Please login to update your profile');
+    }
+    
     const response = await fetch(`${config.api.baseUrl}/api/users/profile`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
       },
       credentials: 'include',
       body: JSON.stringify(data),
@@ -191,7 +239,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(result.error || "Profile update failed")
     }
 
-    setUser(result.user)
+    console.log('Profile update successful, updating user state:', result)
+    setUser(result)
   }
 
   return (

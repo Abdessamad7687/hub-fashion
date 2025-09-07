@@ -9,6 +9,7 @@ import ProductImageGallery from "@/components/product-image-gallery"
 import ProductActions from "@/components/product-actions"
 import ProductReviews from "@/components/product-reviews"
 import RelatedProducts from "@/components/related-products"
+import { ResponsiveBreadcrumb } from "@/components/responsive-breadcrumb"
 import { config } from "@/lib/config"
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
@@ -34,26 +35,47 @@ export default async function ProductPage({ params }: { params: { id: string } }
   }
   const product = await res.json()
 
+  // Fetch reviews to get real rating and count
+  const reviewsRes = await fetch(`${config.api.baseUrl}/api/reviews?productId=${params.id}`, { cache: "no-store" })
+  const reviews = reviewsRes.ok ? await reviewsRes.json() : []
+  
+  // Calculate real rating and review count
+  const reviewCount = reviews.length
+  const averageRating = reviewCount > 0 
+    ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviewCount 
+    : 0
+
   // Use real API data
   const productDetails = {
     ...product,
-    rating: 4.5,
-    reviewCount: 128,
+    rating: averageRating,
+    reviewCount: reviewCount,
     inStock: product.stock > 0,
     stockCount: product.stock,
     sizes: product.sizes?.map((s: any) => s.size) || [],
     colors: product.colors?.map((c: any) => ({ name: c.color, value: c.color })) || [],
     features: product.features?.map((f: any) => `${f.name}: ${f.value}`) || [],
-    specifications: {
-      Material: "60% Cotton, 40% Polyester",
-      "Care Instructions": "Machine wash cold, tumble dry low",
-      "Country of Origin": "Made in USA",
-      Fit: "Regular fit",
+    specifications: product.features?.reduce((acc: any, feature: any) => {
+      acc[feature.name] = feature.value
+      return acc
+    }, {}) || {
+      Material: "Not specified",
+      "Care Instructions": "Not specified",
+      "Country of Origin": "Not specified",
+      Fit: "Not specified",
     },
   }
 
+  // Generate breadcrumb items
+  const breadcrumbItems = [
+    { label: "Products", href: "/products" },
+    ...(product.category ? [{ label: product.category.name, href: `/categories/${product.category.name.toLowerCase()}` }] : []),
+    { label: product.name }
+  ]
+
   return (
     <div className="container py-8">
+      <ResponsiveBreadcrumb items={breadcrumbItems} />
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Product Images */}
         <div className="space-y-4">
@@ -84,7 +106,10 @@ export default async function ProductPage({ params }: { params: { id: string } }
                   />
                 ))}
                 <span className="ml-1 text-sm text-muted-foreground">
-                  {productDetails.rating} ({productDetails.reviewCount} reviews)
+                  {productDetails.reviewCount > 0 
+                    ? `${productDetails.rating.toFixed(1)} (${productDetails.reviewCount} reviews)`
+                    : "No reviews yet"
+                  }
                 </span>
               </div>
             </div>
@@ -149,11 +174,6 @@ export default async function ProductPage({ params }: { params: { id: string } }
           <TabsContent value="description" className="mt-6">
             <div className="prose max-w-none">
               <p className="text-muted-foreground leading-relaxed">{productDetails.description}</p>
-              <p className="mt-4 text-muted-foreground leading-relaxed">
-                This premium {productDetails.name.toLowerCase()} is crafted with attention to detail and quality.
-                Perfect for everyday wear, it combines comfort with style to create a versatile piece that works for any
-                occasion.
-              </p>
             </div>
           </TabsContent>
 

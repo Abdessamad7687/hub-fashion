@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import ProductFilters from "@/components/product-filters"
 import ProductGrid from "@/components/product-grid"
 import ProductsLoading from "./loading"
+import { ResponsiveBreadcrumb } from "@/components/responsive-breadcrumb"
 
 export const dynamic = "force-dynamic"
 
@@ -19,6 +20,7 @@ export default function ProductsPage({
 
   return (
     <div className="container py-8">
+      <ResponsiveBreadcrumb />
       <h1 className="mb-8 text-3xl font-bold tracking-tight">All Products</h1>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[240px_1fr]">
         <ProductFilters />

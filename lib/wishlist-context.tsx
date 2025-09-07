@@ -7,7 +7,7 @@ interface WishlistItem {
   name: string
   price: number
   image?: string
-  category: string
+  category: string | { id: string; name: string; description?: string; image?: string }
 }
 
 interface WishlistState {

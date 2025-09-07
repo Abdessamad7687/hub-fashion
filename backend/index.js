@@ -11,6 +11,7 @@ app.use(cors({
   credentials: true, // Allow cookies and authentication headers
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow all necessary HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'], // Allow necessary headers
+  exposedHeaders: ['Authorization'], // Expose Authorization header to frontend
 }));
 
 app.use(express.json());

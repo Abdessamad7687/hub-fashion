@@ -86,6 +86,7 @@ router.post('/login', async (req, res) => {
     
     // Also send token in response for frontend to store
     res.setHeader('Authorization', `Bearer ${token}`);
+    console.log('Login successful, sending Authorization header:', `Bearer ${token.substring(0, 20)}...`);
     
     const userResponse = {
       id: user.id,

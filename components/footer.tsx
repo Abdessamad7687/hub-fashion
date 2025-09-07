@@ -1,8 +1,43 @@
-﻿import Link from "next/link"
+﻿"use client"
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
 import Image from "next/image"
 import { Facebook, Instagram, Twitter, Mail } from "lucide-react"
+import { config } from "@/lib/config"
 
 export default function Footer() {
+  const [categories, setCategories] = useState([])
+
+  // Helper function to generate category slug
+  const getCategorySlug = (categoryName: string): string => {
+    const slugMap: { [key: string]: string } = {
+      "Men": "men",
+      "Women": "women", 
+      "Kids": "kids",
+      "Accessories": "accessories",
+      "Shoes": "shoes",
+      "Bags": "bags"
+    }
+    
+    return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-')
+  }
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${config.api.baseUrl}/api/categories`)
+        if (response.ok) {
+          const data = await response.json()
+          setCategories(data)
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    }
+
+    fetchCategories()
+  }, [])
   return (
     <footer className="border-t bg-background">
       <div className="container mx-auto px-4 py-12">
@@ -55,21 +90,16 @@ export default function Footer() {
                   Categories
                 </Link>
               </li>
-              <li>
-                <Link href="/categories/men" className="text-muted-foreground hover:text-foreground">
-                  Men's Clothing
-                </Link>
-              </li>
-              <li>
-                <Link href="/categories/women" className="text-muted-foreground hover:text-foreground">
-                  Women's Clothing
-                </Link>
-              </li>
-              <li>
-                <Link href="/categories/kids" className="text-muted-foreground hover:text-foreground">
-                  Kids' Clothing
-                </Link>
-              </li>
+              {categories.slice(0, 3).map((category: any) => (
+                <li key={category.id}>
+                  <Link 
+                    href={`/categories/${getCategorySlug(category.name)}`} 
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

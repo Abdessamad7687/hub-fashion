@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Menu, ShoppingBag, User, Heart, Search } from "lucide-react"
@@ -14,15 +14,47 @@ import MobileNav from "./mobile-nav"
 import CartDrawer from "./cart-drawer"
 import SearchBar from "./search-bar"
 import MobileSearch from "./mobile-search"
+import { config } from "@/lib/config"
 
 export default function Header() {
   const { cart } = useCart()
   const { wishlist } = useWishlist()
   const { user, isAuthenticated } = useAuth()
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [categories, setCategories] = useState([])
 
   const cartItemsCount = cart.reduce((count, item) => count + item.quantity, 0)
   const wishlistItemsCount = wishlist.length
+
+  // Helper function to generate category slug
+  const getCategorySlug = (categoryName: string): string => {
+    const slugMap: { [key: string]: string } = {
+      "Men": "men",
+      "Women": "women", 
+      "Kids": "kids",
+      "Accessories": "accessories",
+      "Shoes": "shoes",
+      "Bags": "bags"
+    }
+    
+    return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-')
+  }
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${config.api.baseUrl}/api/categories`)
+        if (response.ok) {
+          const data = await response.json()
+          setCategories(data)
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -63,15 +95,15 @@ export default function Header() {
             <Link href="/categories" className="text-sm font-medium transition-colors hover:text-primary">
               Categories
             </Link>
-            <Link href="/categories/men" className="text-sm font-medium transition-colors hover:text-primary">
-              Men
-            </Link>
-            <Link href="/categories/women" className="text-sm font-medium transition-colors hover:text-primary">
-              Women
-            </Link>
-            <Link href="/categories/kids" className="text-sm font-medium transition-colors hover:text-primary">
-              Kids
-            </Link>
+            {categories.slice(0, 3).map((category: any) => (
+              <Link 
+                key={category.id} 
+                href={`/categories/${getCategorySlug(category.name)}`} 
+                className="text-sm font-medium transition-colors hover:text-primary"
+              >
+                {category.name}
+              </Link>
+            ))}
           </nav>
 
           {/* Right Side Actions */}

@@ -38,6 +38,8 @@ router.put('/profile', auth, async (req, res) => {
   try {
     console.log('Profile update request body:', req.body);
     console.log('User ID from auth:', req.user.userId);
+    console.log('Authorization header:', req.headers.authorization);
+    console.log('Cookies:', req.cookies);
     
     const { firstName, lastName, phone } = req.body;
     console.log('Extracted fields:', { firstName, lastName, phone });

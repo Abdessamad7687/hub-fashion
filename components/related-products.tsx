@@ -5,11 +5,33 @@ import AddToCartButton from "./add-to-cart-button"
 import ClientWrapper from "./client-wrapper"
 
 export default async function RelatedProducts({ currentProductId }: { currentProductId: string }) {
-  // Fetch products from API and exclude the current one
-  const res = await fetch(`${config.api.baseUrl}/api/products`, { cache: "no-store" })
+  // First, get the current product to find its category
+  const currentProductRes = await fetch(`${config.api.baseUrl}/api/products/${currentProductId}`, { cache: "no-store" })
+  if (!currentProductRes.ok) return null
+  const currentProduct = await currentProductRes.json()
+
+  // Fetch products from the same category, excluding the current product
+  const res = await fetch(`${config.api.baseUrl}/api/products?category=${currentProduct.categoryId}`, { cache: "no-store" })
   if (!res.ok) return null
   const products = await res.json()
-  const relatedProducts = products.filter((product: any) => product.id !== currentProductId).slice(0, 4)
+  
+  // Filter out the current product and limit to 4
+  let relatedProducts = products.filter((product: any) => product.id !== currentProductId)
+  
+  // If we don't have enough products from the same category, get some from other categories
+  if (relatedProducts.length < 4) {
+    const allProductsRes = await fetch(`${config.api.baseUrl}/api/products`, { cache: "no-store" })
+    if (allProductsRes.ok) {
+      const allProducts = await allProductsRes.json()
+      const otherProducts = allProducts.filter((product: any) => 
+        product.id !== currentProductId && 
+        product.categoryId !== currentProduct.categoryId
+      )
+      relatedProducts = [...relatedProducts, ...otherProducts].slice(0, 4)
+    }
+  } else {
+    relatedProducts = relatedProducts.slice(0, 4)
+  }
 
   if (relatedProducts.length === 0) {
     return null

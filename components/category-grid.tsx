@@ -20,12 +20,12 @@ function getCategoryImage(categoryName: string): string {
 // Helper function to generate category slug
 function getCategorySlug(categoryName: string): string {
   const slugMap: { [key: string]: string } = {
-    "Homme": "men",
-    "Femme": "women", 
-    "Enfant": "kids",
-    "Accessoires": "accessories",
-    "Chaussures": "shoes",
-    "Sacs": "bags"
+    "Men": "men",
+    "Women": "women", 
+    "Kids": "kids",
+    "Accessories": "accessories",
+    "Shoes": "shoes",
+    "Bags": "bags"
   }
   
   return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-')

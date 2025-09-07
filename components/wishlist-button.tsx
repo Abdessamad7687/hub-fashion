@@ -12,7 +12,8 @@ interface WishlistButtonProps {
     name: string
     price: number
     image?: string
-    category: string
+    images?: Array<{ url: string }>
+    category: string | { id: string; name: string; description?: string; image?: string }
   }
   variant?: "default" | "outline" | "ghost"
   size?: "default" | "sm" | "lg" | "icon"
@@ -44,8 +45,8 @@ export default function WishlistButton({
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.image,
-        category: product.category,
+        image: product.image || product.images?.[0]?.url,
+        category: typeof product.category === 'string' ? product.category : product.category.name,
       })
       toast({
         title: "Added to wishlist",

@@ -2,14 +2,46 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { config } from "@/lib/config"
 
 export default function MobileNav() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [categories, setCategories] = useState([])
+
+  // Helper function to generate category slug
+  const getCategorySlug = (categoryName: string): string => {
+    const slugMap: { [key: string]: string } = {
+      "Men": "men",
+      "Women": "women", 
+      "Kids": "kids",
+      "Accessories": "accessories",
+      "Shoes": "shoes",
+      "Bags": "bags"
+    }
+    
+    return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-')
+  }
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${config.api.baseUrl}/api/categories`)
+        if (response.ok) {
+          const data = await response.json()
+          setCategories(data)
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -63,15 +95,15 @@ export default function MobileNav() {
                 <Link href="/categories" className="py-2 text-muted-foreground hover:text-foreground">
                   Browse Categories
                 </Link>
-                <Link href="/categories/men" className="py-2 text-muted-foreground hover:text-foreground">
-                  Men's Clothing
-                </Link>
-                <Link href="/categories/women" className="py-2 text-muted-foreground hover:text-foreground">
-                  Women's Clothing
-                </Link>
-                <Link href="/categories/kids" className="py-2 text-muted-foreground hover:text-foreground">
-                  Kids' Clothing
-                </Link>
+                {categories.slice(0, 3).map((category: any) => (
+                  <Link 
+                    key={category.id} 
+                    href={`/categories/${getCategorySlug(category.name)}`} 
+                    className="py-2 text-muted-foreground hover:text-foreground"
+                  >
+                    {category.name}
+                  </Link>
+                ))}
               </div>
             </AccordionContent>
           </AccordionItem>

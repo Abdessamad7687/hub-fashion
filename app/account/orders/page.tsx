@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Package, Eye, Truck } from "lucide-react"
+import { Package, Eye, Truck, ArrowLeft, Calendar, MapPin, CreditCard } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/lib/auth-context"
 import { useOrders } from "@/lib/order-context"
+import { ResponsiveBreadcrumb } from "@/components/responsive-breadcrumb"
 
 export default function OrdersPage() {
   const { isAuthenticated } = useAuth()
@@ -50,104 +52,154 @@ export default function OrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="container flex items-center justify-center py-16">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <div className="container flex items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
       </div>
     )
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="container flex flex-col items-center justify-center py-16 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Sign in to view your orders</h1>
-        <p className="mt-4 text-muted-foreground">You need to be signed in to view your order history.</p>
-        <Button className="mt-8" asChild>
-          <Link href="/account/login">Sign In</Link>
-        </Button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <div className="container flex flex-col items-center justify-center py-16 text-center">
+          <div className="max-w-md mx-auto">
+            <div className="mb-6 rounded-full bg-muted/50 p-6 w-fit mx-auto">
+              <Package className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight mb-4">Sign in to view your orders</h1>
+            <p className="text-muted-foreground mb-8">You need to be signed in to view your order history.</p>
+            <Button className="shadow-sm" asChild>
+              <Link href="/account/login">Sign In</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (orders.length === 0) {
     return (
-      <div className="container flex flex-col items-center justify-center py-16 text-center">
-        <div className="mb-4 rounded-full bg-muted p-6">
-          <Package className="h-10 w-10 text-muted-foreground" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <div className="container py-6 lg:py-8">
+          <ResponsiveBreadcrumb />
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="mb-6 rounded-full bg-muted/50 p-6 w-fit mx-auto">
+                <Package className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight mb-4">No orders yet</h1>
+              <p className="text-muted-foreground mb-8">When you place your first order, it will appear here.</p>
+              <Button className="shadow-sm" asChild>
+                <Link href="/products">Start Shopping</Link>
+              </Button>
+            </div>
+          </div>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">No orders yet</h1>
-        <p className="mt-4 text-muted-foreground">When you place your first order, it will appear here.</p>
-        <Button className="mt-8" asChild>
-          <Link href="/products">Start Shopping</Link>
-        </Button>
       </div>
     )
   }
 
   return (
-    <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Order History</h1>
-        <p className="text-muted-foreground">View and track your orders</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="container py-6 lg:py-8">
+        <ResponsiveBreadcrumb />
+        
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="ghost" size="sm" asChild className="p-2">
+              <Link href="/account">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                Order History
+              </h1>
+              <p className="text-muted-foreground">View and track your orders</p>
+            </div>
+          </div>
+        </div>
 
-      <div className="space-y-6">
-        {orders.map((order) => (
-          <Card key={order.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">Order {order.id}</CardTitle>
-                  <p className="text-sm text-muted-foreground">Placed on {order.createdAt.toLocaleDateString()}</p>
-                </div>
-                <Badge className={getStatusColor(order.status)}>{order.status.toUpperCase()}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div>
-                    <p className="text-sm font-medium">Total</p>
-                    <p className="text-lg font-semibold">${order.total.toFixed(2)}</p>
+        <div className="space-y-6">
+          {orders.map((order) => (
+            <Card key={order.id} className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="space-y-1">
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Order #{order.id.slice(-8).toUpperCase()}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>Placed on {new Date(order.createdAt).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">Items</p>
-                    <p className="text-sm text-muted-foreground">
+                  <Badge className={`${getStatusColor(order.status)} px-3 py-1 text-xs font-medium`}>
+                    {order.status.toUpperCase()}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-lg bg-muted/30">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Total Amount</p>
+                    <p className="text-2xl font-bold">${order.total.toFixed(2)}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/30">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Items</p>
+                    <p className="text-lg font-semibold">
                       {order.items.reduce((sum, item) => sum + item.quantity, 0)} items
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">Shipping Address</p>
-                    <p className="text-sm text-muted-foreground">
-                      {order.shippingAddress ? 
-                        `${order.shippingAddress.city}, ${order.shippingAddress.state}` : 
-                        'Not available'
-                      }
-                    </p>
+                  <div className="p-4 rounded-lg bg-muted/30">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Shipping</p>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      <p className="text-sm">
+                        {order.shippingAddress ? 
+                          `${order.shippingAddress.city}, ${order.shippingAddress.state}` : 
+                          'Not available'
+                        }
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">Estimated Delivery</p>
-                    <p className="text-sm text-muted-foreground">{order.estimatedDelivery?.toLocaleDateString()}</p>
+                  <div className="p-4 rounded-lg bg-muted/30">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Delivery</p>
+                    <p className="text-sm">
+                      {order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString() : 'TBD'}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" asChild>
+                <Separator />
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button variant="outline" size="sm" asChild className="shadow-sm">
                     <Link href={`/checkout/confirmation/${order.id}`}>
-                      <Eye className="mr-1 h-3 w-3" />
+                      <Eye className="mr-2 h-4 w-4" />
                       View Details
                     </Link>
                   </Button>
                   {order.status === "shipped" && (
-                    <Button variant="outline" size="sm">
-                      <Truck className="mr-1 h-3 w-3" />
+                    <Button variant="outline" size="sm" className="shadow-sm">
+                      <Truck className="mr-2 h-4 w-4" />
                       Track Package
                     </Button>
                   )}
+                  {order.status === "delivered" && (
+                    <Button variant="outline" size="sm" className="shadow-sm">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Reorder
+                    </Button>
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   )

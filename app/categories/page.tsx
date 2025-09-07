@@ -3,16 +3,17 @@ import Image from "next/image"
 import { Metadata } from 'next'
 
 import { config } from "@/lib/config"
+import { ResponsiveBreadcrumb } from "@/components/responsive-breadcrumb"
 
 // Helper function to generate category slug
 function getCategorySlug(categoryName: string): string {
   const slugMap: { [key: string]: string } = {
-    "Homme": "men",
-    "Femme": "women", 
-    "Enfant": "kids",
-    "Accessoires": "accessories",
-    "Chaussures": "shoes",
-    "Sacs": "bags"
+    "Men": "men",
+    "Women": "women", 
+    "Kids": "kids",
+    "Accessories": "accessories",
+    "Shoes": "shoes",
+    "Bags": "bags"
   }
   
   return slugMap[categoryName] || categoryName.toLowerCase().replace(/\s+/g, '-')
@@ -38,12 +39,7 @@ export default async function CategoriesPage() {
 
   return (
     <div className="container py-8">
-      {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center space-x-2 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-foreground">Home</Link>
-        <span>/</span>
-        <span className="text-foreground">Categories</span>
-      </nav>
+      <ResponsiveBreadcrumb />
 
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold tracking-tight">Shop by Category</h1>

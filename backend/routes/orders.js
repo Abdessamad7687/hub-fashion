@@ -6,7 +6,16 @@ const router = express.Router();
 // Get all orders (admin only)
 router.get('/', auth, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Forbidden' });
-  const orders = await prisma.order.findMany({ include: { items: true, user: true } });
+  const orders = await prisma.order.findMany({ 
+    include: { 
+      items: { 
+        include: { 
+          product: true 
+        } 
+      }, 
+      user: true 
+    } 
+  });
   res.json(orders);
 });
 
@@ -15,7 +24,13 @@ router.get('/user/me', auth, async (req, res) => {
   try {
     const orders = await prisma.order.findMany({ 
       where: { userId: req.user.userId },
-      include: { items: true },
+      include: { 
+        items: { 
+          include: { 
+            product: true 
+          } 
+        } 
+      },
       orderBy: { createdAt: 'desc' }
     });
     res.json(orders);
@@ -26,7 +41,17 @@ router.get('/user/me', auth, async (req, res) => {
 
 // Get order by id (admin or owner)
 router.get('/:id', auth, async (req, res) => {
-  const order = await prisma.order.findUnique({ where: { id: req.params.id }, include: { items: true, user: true } });
+  const order = await prisma.order.findUnique({ 
+    where: { id: req.params.id }, 
+    include: { 
+      items: { 
+        include: { 
+          product: true 
+        } 
+      }, 
+      user: true 
+    } 
+  });
   if (!order) return res.status(404).json({ error: 'Not found' });
   if (req.user.role !== 'ADMIN' && req.user.userId !== order.userId) return res.status(403).json({ error: 'Forbidden' });
   res.json(order);

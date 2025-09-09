@@ -4,8 +4,9 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, Tag, Users, ShoppingCart, TrendingUp, Eye } from "lucide-react"
+import { Package, Tag, Users, ShoppingCart, TrendingUp, Eye, FileText } from "lucide-react"
 import { config } from "@/lib/config"
+import { useAuth } from "@/lib/auth-context"
 
 interface DashboardStats {
   totalProducts: number
@@ -19,6 +20,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const { user } = useAuth()
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     totalCategories: 0,
@@ -34,6 +36,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          console.log('No token found for admin dashboard')
+          setIsLoading(false)
+          return
+        }
+
         // Fetch products
         const productsRes = await fetch(`${config.api.baseUrl}/api/products`)
         const products = productsRes.ok ? await productsRes.json() : []
@@ -42,8 +51,13 @@ export default function AdminDashboard() {
         const categoriesRes = await fetch(`${config.api.baseUrl}/api/categories`)
         const categories = categoriesRes.ok ? await categoriesRes.json() : []
         
-        // Fetch orders
-        const ordersRes = await fetch(`${config.api.baseUrl}/api/orders`)
+        // Fetch orders (admin only)
+        const ordersRes = await fetch(`${config.api.baseUrl}/api/orders`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        })
         const orders = ordersRes.ok ? await ordersRes.json() : []
         
         // Calculate revenue
@@ -210,6 +224,46 @@ export default function AdminDashboard() {
             </Button>
             <Button asChild variant="outline" className="w-full">
               <Link href="/admin/categories/new">Add New Category</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Order Management
+            </CardTitle>
+            <CardDescription>
+              View and manage customer orders
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full">
+              <Link href="/admin/orders">View All Orders</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/admin/orders">Order Analytics</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              User Management
+            </CardTitle>
+            <CardDescription>
+              Manage customer accounts and permissions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full">
+              <Link href="/admin/users">View All Users</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/admin/users">User Analytics</Link>
             </Button>
           </CardContent>
         </Card>

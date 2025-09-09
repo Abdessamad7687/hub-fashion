@@ -160,4 +160,80 @@ router.get('/stats', auth, async (req, res) => {
   }
 });
 
+// Get chart data for users and revenue (admin only)
+router.get('/chart-data', auth, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Forbidden' });
+  
+  try {
+    // Get the last 6 months of data
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    // Get users data grouped by month
+    const usersData = await prisma.user.findMany({
+      where: {
+        createdAt: { gte: sixMonthsAgo }
+      },
+      select: {
+        createdAt: true
+      }
+    });
+    
+    // Get orders data grouped by month
+    const ordersData = await prisma.order.findMany({
+      where: {
+        createdAt: { gte: sixMonthsAgo }
+      },
+      select: {
+        createdAt: true,
+        total: true
+      }
+    });
+    
+    // Group data by month
+    const monthlyData = {};
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Initialize last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthName = monthNames[date.getMonth()];
+      monthlyData[monthKey] = {
+        month: monthName,
+        users: 0,
+        revenue: 0
+      };
+    }
+    
+    // Count users by month
+    usersData.forEach(user => {
+      const monthKey = `${user.createdAt.getFullYear()}-${String(user.createdAt.getMonth() + 1).padStart(2, '0')}`;
+      if (monthlyData[monthKey]) {
+        monthlyData[monthKey].users++;
+      }
+    });
+    
+    // Sum revenue by month
+    ordersData.forEach(order => {
+      const monthKey = `${order.createdAt.getFullYear()}-${String(order.createdAt.getMonth() + 1).padStart(2, '0')}`;
+      if (monthlyData[monthKey]) {
+        monthlyData[monthKey].revenue += order.total;
+      }
+    });
+    
+    // Convert to array and sort by month
+    const chartData = Object.values(monthlyData).sort((a, b) => {
+      const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month);
+    });
+    
+    res.json(chartData);
+  } catch (err) {
+    console.error('Error fetching chart data:', err);
+    res.status(500).json({ error: 'Failed to fetch chart data' });
+  }
+});
+
 module.exports = router;

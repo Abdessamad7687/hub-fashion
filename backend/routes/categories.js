@@ -5,8 +5,28 @@ const router = express.Router();
 
 // Get all categories
 router.get('/', async (req, res) => {
-  const categories = await prisma.category.findMany();
-  res.json(categories);
+  try {
+    const categories = await prisma.category.findMany({
+      include: {
+        products: {
+          select: {
+            id: true
+          }
+        }
+      }
+    });
+    
+    // Transform the data to include product count
+    const categoriesWithCount = categories.map(category => ({
+      ...category,
+      productCount: category.products.length
+    }));
+    
+    res.json(categoriesWithCount);
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
 });
 
 // Get category by id

@@ -2,8 +2,7 @@
 import Providers from "@/components/providers";
 import { Toaster } from "@/components/ui/toaster";
 import ClientWrapper from "@/components/client-wrapper";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import ConditionalLayout from "@/components/conditional-layout";
 
 export const metadata = {
   title: "StyleHub - Modern Fashion Store",
@@ -15,11 +14,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-screen bg-background font-sans antialiased">
         <Providers>
-          <div className="relative flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
         </Providers>
         <ClientWrapper>
           <Toaster />

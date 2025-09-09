@@ -78,7 +78,7 @@ export default async function CategoriesPage() {
                 <CardTitle className="flex items-center justify-between">
                   {category.name}
                   <Badge variant="secondary">
-                    {category.products?.length || 0} products
+                    {category.productCount || 0} products
                   </Badge>
                 </CardTitle>
                 <CardDescription>

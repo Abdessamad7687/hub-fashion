@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ProductGrid from '@/components/product-grid'
 import ProductFilters from '@/components/product-filters'
+import ProductSort from '@/components/product-sort'
 import { ResponsiveBreadcrumb } from '@/components/responsive-breadcrumb'
 
 interface CategoryPageProps {
@@ -45,10 +46,11 @@ async function fetchCategory(slug: string) {
     
     const allCategories = await allCategoriesRes.json()
     
-    // Find category by slug mapping
+    // Find category by slug mapping - check both the mapped name and direct name match
     const category = allCategories.find((cat: any) => {
-      const mappedSlug = categorySlugMap[cat.name] || cat.name.toLowerCase().replace(/\s+/g, '-')
-      return mappedSlug === slug.toLowerCase()
+      const mappedSlug = categorySlugMap[slug.toLowerCase()] || slug.toLowerCase()
+      const categoryNameSlug = cat.name.toLowerCase().replace(/\s+/g, '-')
+      return cat.name.toLowerCase() === mappedSlug || categoryNameSlug === slug.toLowerCase()
     })
     
     return category || null
@@ -144,11 +146,18 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         </aside>
         
         <main className="lg:col-span-3">
-          <ProductGrid 
-            category={category.id} 
-            sort={searchParams.sort} 
-            price={searchParams.price} 
-          />
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">{category.name} Products</h2>
+              <ProductSort />
+            </div>
+            <ProductGrid 
+              category={category.id} 
+              sort={searchParams.sort} 
+              price={searchParams.price}
+              page={searchParams.page}
+            />
+          </div>
         </main>
       </div>
     </div>

@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { User, Mail, Phone, Calendar, Settings, LogOut, Package, MapPin, Shield, Bell, CreditCard, Eye, Truck } from "lucide-react"
+import { User, Mail, Phone, Calendar, LogOut, Package, Shield, Eye, Truck, MapPin } from "lucide-react"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -220,10 +220,6 @@ export default function AccountPage() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button variant="outline" size="sm" className="shadow-sm">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
-                  </Button>
                   <Button variant="outline" size="sm" onClick={handleLogout} className="shadow-sm">
                     <LogOut className="h-4 w-4 mr-2" />
                     Log Out
@@ -235,7 +231,7 @@ export default function AccountPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -245,34 +241,6 @@ export default function AccountPage() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
                   <p className="text-xl font-bold">{orders.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                  <MapPin className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Addresses</p>
-                  <p className="text-xl font-bold">0</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                  <CreditCard className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Payment Methods</p>
-                  <p className="text-xl font-bold">0</p>
                 </div>
               </div>
             </CardContent>
@@ -295,7 +263,7 @@ export default function AccountPage() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-md">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-md">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -303,14 +271,6 @@ export default function AccountPage() {
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               <span className="hidden sm:inline">Orders</span>
-            </TabsTrigger>
-            <TabsTrigger value="addresses" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              <span className="hidden sm:inline">Addresses</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
 
@@ -500,79 +460,6 @@ export default function AccountPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="addresses" className="space-y-6">
-            <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <MapPin className="h-5 w-5" />
-                  Saved Addresses
-                </CardTitle>
-                <CardDescription>Manage your shipping and billing addresses.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-xl border-2 border-dashed border-muted-foreground/25 p-12 text-center">
-                  <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
-                    <MapPin className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">No addresses saved</h3>
-                  <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                    Add an address to make checkout faster and manage your delivery preferences.
-                  </p>
-                  <Button variant="outline" className="shadow-sm">
-                    Add New Address
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <Settings className="h-5 w-5" />
-                  Account Settings
-                </CardTitle>
-                <CardDescription>Manage your account preferences and security settings.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <Bell className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">Email Notifications</p>
-                        <p className="text-sm text-muted-foreground">Receive updates about your orders and promotions</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">Enable</Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <Shield className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">Two-Factor Authentication</p>
-                        <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">Setup</Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">Payment Methods</p>
-                        <p className="text-sm text-muted-foreground">Manage your saved payment methods</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">Manage</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Order Details Modal */}

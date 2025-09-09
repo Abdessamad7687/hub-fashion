@@ -18,11 +18,11 @@ function getProductImage(categoryName: string): string {
 }
 
 async function fetchFeaturedProducts() {
-  const res = await fetch(`${config.api.baseUrl}/api/products`, { cache: "no-store" })
+  const res = await fetch(`${config.api.baseUrl}/api/products?limit=8`, { cache: "no-store" })
   if (!res.ok) return []
-  const products = await res.json()
+  const data = await res.json()
   // Return first 8 products as featured
-  return products.slice(0, 8)
+  return data.products || []
 }
 
 export default async function FeaturedProducts() {
@@ -45,7 +45,11 @@ export default async function FeaturedProducts() {
 
           <div className="p-6">
             <Link href={`/products/${product.id}`} className="hover:underline">
-              <h3 className="font-semibold text-lg line-clamp-2">{product.name}</h3>
+              <h3 className="font-semibold text-lg overflow-hidden" style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical'
+              }}>{product.name}</h3>
             </Link>
             <p className="mt-1 text-sm text-muted-foreground capitalize">{product.category?.name}</p>
             

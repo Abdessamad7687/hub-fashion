@@ -44,16 +44,17 @@ export default function ProductFilters() {
         if (categoriesRes.ok) {
           const categoriesData = await categoriesRes.json()
           setCategories(categoriesData.map((cat: any) => ({
-            id: getCategorySlug(cat.name),
+            id: cat.id, // Use the actual category ID
             label: cat.name,
-            originalId: cat.id
+            slug: getCategorySlug(cat.name)
           })))
         }
 
         // Fetch products to get colors and sizes
         const productsRes = await fetch(`${config.api.baseUrl}/api/products`)
         if (productsRes.ok) {
-          const productsData = await productsRes.json()
+          const data = await productsRes.json()
+          const productsData = data.products || []
           
           // Extract unique colors
           const uniqueColors = new Set()
@@ -102,6 +103,8 @@ export default function ProductFilters() {
     } else {
       params.set("category", categoryId)
     }
+    // Reset to page 1 when changing filters
+    params.delete("page")
     router.push(`/products?${params.toString()}`)
   }
 
@@ -120,6 +123,8 @@ export default function ProductFilters() {
       params.set("colors", [...currentColors, colorId].join(","))
     }
     
+    // Reset to page 1 when changing filters
+    params.delete("page")
     router.push(`/products?${params.toString()}`)
   }
 
@@ -138,6 +143,8 @@ export default function ProductFilters() {
       params.set("sizes", [...currentSizes, sizeId].join(","))
     }
     
+    // Reset to page 1 when changing filters
+    params.delete("page")
     router.push(`/products?${params.toString()}`)
   }
 
@@ -148,6 +155,8 @@ export default function ProductFilters() {
   const applyFilters = () => {
     const params = new URLSearchParams(searchParams)
     params.set("price", `${priceRange[0]}-${priceRange[1]}`)
+    // Reset to page 1 when applying filters
+    params.delete("page")
     router.push(`/products?${params.toString()}`)
   }
 

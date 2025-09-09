@@ -13,7 +13,8 @@ export default async function RelatedProducts({ currentProductId }: { currentPro
   // Fetch products from the same category, excluding the current product
   const res = await fetch(`${config.api.baseUrl}/api/products?category=${currentProduct.categoryId}`, { cache: "no-store" })
   if (!res.ok) return null
-  const products = await res.json()
+  const data = await res.json()
+  const products = data.products || []
   
   // Filter out the current product and limit to 4
   let relatedProducts = products.filter((product: any) => product.id !== currentProductId)
@@ -22,7 +23,8 @@ export default async function RelatedProducts({ currentProductId }: { currentPro
   if (relatedProducts.length < 4) {
     const allProductsRes = await fetch(`${config.api.baseUrl}/api/products`, { cache: "no-store" })
     if (allProductsRes.ok) {
-      const allProducts = await allProductsRes.json()
+      const allData = await allProductsRes.json()
+      const allProducts = allData.products || []
       const otherProducts = allProducts.filter((product: any) => 
         product.id !== currentProductId && 
         product.categoryId !== currentProduct.categoryId

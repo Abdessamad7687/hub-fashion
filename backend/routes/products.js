@@ -5,8 +5,25 @@ const router = express.Router();
 
 // Get all products with filters
 router.get('/', async (req, res) => {
-  const { category, minPrice, maxPrice, gender, size, sizes, colors, price, search, sort } = req.query;
+  const { 
+    category, 
+    minPrice, 
+    maxPrice, 
+    gender, 
+    size, 
+    sizes, 
+    colors, 
+    price, 
+    search, 
+    sort,
+    page = 1,
+    limit = 12
+  } = req.query;
+  
   const where = {};
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
   
   // Category filter
   if (category) where.categoryId = category;
@@ -72,38 +89,64 @@ router.get('/', async (req, res) => {
     orderBy = { createdAt: 'desc' };
   }
   
-  const products = await prisma.product.findMany({
-    where,
-    orderBy,
-    include: { 
-      images: true, 
-      sizes: true, 
-      colors: true, 
-      features: true, 
-      category: true,
-      reviews: {
-        select: {
-          rating: true
+  try {
+    // Get total count for pagination
+    const totalCount = await prisma.product.count({ where });
+    
+    // Get products with pagination
+    const products = await prisma.product.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limitNum,
+      include: { 
+        images: true, 
+        sizes: true, 
+        colors: true, 
+        features: true, 
+        category: true,
+        reviews: {
+          select: {
+            rating: true
+          }
         }
       }
-    }
-  });
+    });
 
-  // Calculate average ratings
-  const productsWithRatings = products.map(product => {
-    const ratings = product.reviews.map(review => review.rating);
-    const averageRating = ratings.length > 0 
-      ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length 
-      : 0;
-    
-    return {
-      ...product,
-      averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
-      reviewCount: ratings.length
-    };
-  });
+    // Calculate average ratings
+    const productsWithRatings = products.map(product => {
+      const ratings = product.reviews.map(review => review.rating);
+      const averageRating = ratings.length > 0 
+        ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length 
+        : 0;
+      
+      return {
+        ...product,
+        averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
+        reviewCount: ratings.length
+      };
+    });
 
-  res.json(productsWithRatings);
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / limitNum);
+    const hasNextPage = pageNum < totalPages;
+    const hasPrevPage = pageNum > 1;
+
+    res.json({
+      products: productsWithRatings,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalCount,
+        hasNextPage,
+        hasPrevPage,
+        limit: limitNum
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Search products endpoint for live search

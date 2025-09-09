@@ -53,7 +53,8 @@ export default function SearchFilters() {
         // Fetch products to get colors and sizes
         const productsRes = await fetch(`${config.api.baseUrl}/api/products`)
         if (productsRes.ok) {
-          const productsData = await productsRes.json()
+          const data = await productsRes.json()
+          const productsData = data.products || []
           
           // Extract unique colors
           const uniqueColors = new Set()

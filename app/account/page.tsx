@@ -4,7 +4,8 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Mail, Phone, Calendar, Settings, LogOut, Package, MapPin, Shield, Bell, CreditCard } from "lucide-react"
+import Link from "next/link"
+import { User, Mail, Phone, Calendar, Settings, LogOut, Package, MapPin, Shield, Bell, CreditCard, Eye, Truck } from "lucide-react"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -16,14 +17,22 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth-context"
+import { useOrders } from "@/lib/order-context"
 import { ResponsiveBreadcrumb } from "@/components/responsive-breadcrumb"
+import { OrderDetailsModal } from "@/components/order-details-modal"
+import type { Order } from "@/lib/order-context"
 
 export default function AccountPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { user, isAuthenticated, isLoading, logout, updateProfile } = useAuth()
+  const { orders, fetchUserOrders } = useOrders()
 
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false)
+  const [activeTab, setActiveTab] = useState("profile")
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
   const [profileData, setProfileData] = useState({
     firstName: "",
     lastName: "",
@@ -105,6 +114,52 @@ export default function AccountPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setProfileData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleTabChange = async (value: string) => {
+    setActiveTab(value)
+    if (value === "orders" && isAuthenticated) {
+      setIsLoadingOrders(true)
+      try {
+        await fetchUserOrders()
+      } catch (error) {
+        console.error('Error fetching orders:', error)
+        toast({
+          title: "Error",
+          description: "Failed to load orders. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoadingOrders(false)
+      }
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return "bg-green-100 text-green-800"
+      case "processing":
+        return "bg-blue-100 text-blue-800"
+      case "shipped":
+        return "bg-purple-100 text-purple-800"
+      case "delivered":
+        return "bg-green-100 text-green-800"
+      case "cancelled":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const handleViewOrderDetails = (order: Order) => {
+    setSelectedOrder(order)
+    setIsOrderModalOpen(true)
+  }
+
+  const handleCloseOrderModal = () => {
+    setIsOrderModalOpen(false)
+    setSelectedOrder(null)
   }
 
   if (isLoading) {
@@ -189,7 +244,7 @@ export default function AccountPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
-                  <p className="text-xl font-bold">0</p>
+                  <p className="text-xl font-bold">{orders.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -239,7 +294,7 @@ export default function AccountPage() {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="profile" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-md">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
@@ -350,18 +405,97 @@ export default function AccountPage() {
                 <CardDescription>View and track your recent orders.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-xl border-2 border-dashed border-muted-foreground/25 p-12 text-center">
-                  <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
-                    <Package className="h-8 w-8 text-muted-foreground" />
+                {isLoadingOrders ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    <span className="ml-3 text-muted-foreground">Loading orders...</span>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">No orders yet</h3>
-                  <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                    When you place your first order, it will appear here with tracking information and details.
-                  </p>
-                  <Button className="shadow-sm">
-                    Start Shopping
-                  </Button>
-                </div>
+                ) : orders.length === 0 ? (
+                  <div className="rounded-xl border-2 border-dashed border-muted-foreground/25 p-12 text-center">
+                    <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
+                      <Package className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">No orders yet</h3>
+                    <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                      When you place your first order, it will appear here with tracking information and details.
+                    </p>
+                    <Button className="shadow-sm" asChild>
+                      <Link href="/products">Start Shopping</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((order) => (
+                      <Card key={order.id} className="border shadow-sm hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="space-y-2">
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                <Package className="h-4 w-4" />
+                                Order #{order.id.slice(-8).toUpperCase()}
+                              </CardTitle>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>Placed on {new Date(order.createdAt).toLocaleDateString('en-US', { 
+                                  weekday: 'long', 
+                                  year: 'numeric', 
+                                  month: 'long', 
+                                  day: 'numeric' 
+                                })}</span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <Badge className={`${getStatusColor(order.status)} px-3 py-1 text-xs font-medium`}>
+                                {order.status.toUpperCase()}
+                              </Badge>
+                              <div className="text-sm font-semibold">
+                                ${order.total.toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <p className="font-medium text-muted-foreground">Items</p>
+                              <p>{order.items.reduce((sum, item) => sum + item.quantity, 0)} items</p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-muted-foreground">Shipping</p>
+                              <p className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {order.shippingAddress ? 
+                                  `${order.shippingAddress.city}, ${order.shippingAddress.state}` : 
+                                  'Not available'
+                                }
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-muted-foreground">Payment</p>
+                              <p className="capitalize">{order.paymentMethod}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleViewOrderDetails(order)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </Button>
+                            {order.status === "shipped" && (
+                              <Button variant="outline" size="sm">
+                                <Truck className="mr-2 h-4 w-4" />
+                                Track Package
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -440,6 +574,13 @@ export default function AccountPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Order Details Modal */}
+        <OrderDetailsModal
+          order={selectedOrder}
+          isOpen={isOrderModalOpen}
+          onClose={handleCloseOrderModal}
+        />
       </div>
     </div>
   )

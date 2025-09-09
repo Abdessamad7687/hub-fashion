@@ -164,19 +164,35 @@ export default function OrdersPage() {
             <Card key={order.id} className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
               <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <CardTitle className="text-xl flex items-center gap-2">
                       <Package className="h-5 w-5" />
                       Order #{order.id.slice(-8).toUpperCase()}
                     </CardTitle>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
-                      <span>Placed on {new Date(order.createdAt).toLocaleDateString()}</span>
+                      <span>Placed on {new Date(order.createdAt).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Order ID: {order.id}
                     </div>
                   </div>
-                  <Badge className={`${getStatusColor(order.status)} px-3 py-1 text-xs font-medium`}>
-                    {order.status.toUpperCase()}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge className={`${getStatusColor(order.status)} px-3 py-1 text-xs font-medium`}>
+                      {order.status.toUpperCase()}
+                    </Badge>
+                    <div className="text-xs text-muted-foreground text-right">
+                      {new Date(order.createdAt).toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </div>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -206,7 +222,11 @@ export default function OrdersPage() {
                   <div className="p-4 rounded-lg bg-muted/30">
                     <p className="text-sm font-medium text-muted-foreground mb-1">Delivery</p>
                     <p className="text-sm">
-                      {order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString() : 'TBD'}
+                      {order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      }) : 'TBD'}
                     </p>
                   </div>
                 </div>

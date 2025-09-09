@@ -32,9 +32,9 @@ router.get('/:id', auth, async (req, res) => {
   res.json(order);
 });
 
-// Create order (client only)
+// Create order (client or admin)
 router.post('/', auth, async (req, res) => {
-  if (req.user.role !== 'CLIENT') return res.status(403).json({ error: 'Forbidden' });
+  if (req.user.role !== 'CLIENT' && req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Forbidden' });
   const { items, shippingAddress, subtotal, shipping, tax, total, paymentMethod } = req.body;
   try {
     const order = await prisma.order.create({

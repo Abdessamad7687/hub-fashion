@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useReducer, type ReactNode } from "react"
+import { createContext, useContext, useReducer, useCallback, type ReactNode } from "react"
 import { config } from "./config"
 
 export interface OrderItem {
@@ -105,20 +105,30 @@ function orderReducer(state: OrderState, action: OrderAction): OrderState {
 export function OrderProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(orderReducer, { orders: [] })
 
-  const createOrder = async (orderData: Omit<Order, "id" | "createdAt" | "status">): Promise<Order> => {
+  const createOrder = useCallback(async (orderData: Omit<Order, "id" | "createdAt" | "status">): Promise<Order> => {
     try {
+      // Get the auth token from localStorage
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+
       // Call backend API to create order
       const response = await fetch(`${config.api.baseUrl}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         credentials: 'include',
         body: JSON.stringify(orderData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create order');
+        const errorText = await response.text();
+        console.error('Order creation failed:', response.status, errorText);
+        throw new Error(`Failed to create order: ${response.status} ${errorText}`);
       }
 
       const backendOrder = await response.json();
@@ -151,24 +161,63 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     console.error('Error creating order:', error);
     throw error;
   }
-}
+}, [])
 
-  const fetchUserOrders = async (): Promise<void> => {
+  const fetchUserOrders = useCallback(async (): Promise<void> => {
     try {
-      console.log('Fetching user orders from:', `${config.api.baseUrl}/api/orders/user/me`);
+      console.log('=== fetchUserOrders called ===');
+      // Get the auth token from localStorage
+      const token = localStorage.getItem('token');
+      console.log('Token found:', !!token);
+      console.log('Token value:', token ? token.substring(0, 20) + '...' : 'No token');
       
-      const response = await fetch(`${config.api.baseUrl}/api/orders/user/me`, {
+      if (!token) {
+        console.log('No token found, skipping order fetch');
+        return;
+      }
+      
+      // Decode the token to check if user is admin
+      let isAdmin = false;
+      try {
+        console.log('Token parts:', token.split('.').length);
+        console.log('Token parts:', token.split('.'));
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('Decoded payload:', payload);
+        isAdmin = payload.role === 'ADMIN';
+        console.log('User role from token:', payload.role);
+        console.log('Is admin:', isAdmin);
+      } catch (e) {
+        console.log('Could not decode token, defaulting to user orders', e);
+        console.log('Token that failed to decode:', token);
+      }
+      
+      // Use different endpoint based on user role
+      const endpoint = isAdmin ? '/api/orders' : '/api/orders/user/me';
+      console.log('Fetching orders from:', `${config.api.baseUrl}${endpoint}`);
+      
+      console.log('Making API call to:', `${config.api.baseUrl}${endpoint}`);
+      console.log('With headers:', {
+        'Authorization': `Bearer ${token.substring(0, 20)}...`,
+      });
+      
+      const response = await fetch(`${config.api.baseUrl}${endpoint}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         credentials: 'include',
       });
 
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Response error:', errorText);
         throw new Error(`Failed to fetch orders: ${response.status} ${errorText}`);
       }
+
+      console.log('Response is ok, parsing JSON...');
 
       const backendOrders = await response.json();
       console.log('Backend orders received:', backendOrders);
@@ -194,7 +243,17 @@ export function OrderProvider({ children }: { children: ReactNode }) {
           state: backendOrder.shippingState || '',
           zipCode: backendOrder.shippingZipCode || '',
           country: backendOrder.shippingCountry || '',
-        } : undefined,
+        } : {
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          address: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: '',
+        },
         subtotal: backendOrder.total,
         shipping: 0,
         tax: 0,
@@ -206,12 +265,13 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       }));
 
       console.log('Transformed orders:', orders);
+      console.log('Number of orders:', orders.length);
       dispatch({ type: "SET_USER_ORDERS", payload: orders });
       console.log('Orders dispatched to state');
     } catch (error) {
       console.error('Error fetching orders:', error);
     }
-  }
+  }, [])
 
   const getOrder = (id: string): Order | undefined => {
     return state.orders.find((order) => order.id === id)

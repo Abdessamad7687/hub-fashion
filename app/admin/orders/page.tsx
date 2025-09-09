@@ -35,21 +35,35 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
+      console.log('Fetching admin orders...');
+      
+      // Get the auth token from localStorage
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/orders', {
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+      
+      const response = await fetch('http://localhost:4000/api/orders', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
       });
+
+      console.log('Admin orders response:', response.status, response.ok);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Admin orders data:', data);
         setOrders(data);
       } else {
-        console.error('Failed to fetch orders');
+        const errorText = await response.text();
+        console.error('Failed to fetch admin orders:', response.status, errorText);
       }
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error fetching admin orders:', error);
     } finally {
       setLoading(false);
     }
@@ -73,22 +87,36 @@ export default function OrdersPage() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
+      console.log('Updating order status:', orderId, newStatus);
+      
+      // Get the auth token from localStorage
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/orders/${orderId}`, {
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:4000/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus }),
       });
+
+      console.log('Update status response:', response.status, response.ok);
 
       if (response.ok) {
         setOrders(orders.map(order => 
           order.id === orderId ? { ...order, status: newStatus as any } : order
         ));
+        console.log('Order status updated successfully');
       } else {
-        console.error('Failed to update order status');
+        const errorText = await response.text();
+        console.error('Failed to update order status:', response.status, errorText);
       }
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -124,24 +152,35 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-        <p className="text-gray-600">Manage customer orders</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
+          <p className="text-gray-600">View and manage all customer orders</p>
+        </div>
+        <Button onClick={fetchOrders} variant="outline">
+          Refresh Orders
+        </Button>
       </div>
 
       <div className="space-y-4">
         {orders.map((order) => (
-          <Card key={order.id}>
+          <Card key={order.id} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">Order #{order.id.slice(-8)}</CardTitle>
-                  <p className="text-sm text-gray-600">
-                    {order.user.firstName} {order.user.lastName} ({order.user.email})
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Order #{order.id.slice(-8).toUpperCase()}
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Customer: {order.user.firstName} {order.user.lastName} ({order.user.email})
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Placed on {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge className={getStatusColor(order.status)}>
+                  <Badge className={`${getStatusColor(order.status)} px-3 py-1 text-xs font-medium`}>
                     {order.status}
                   </Badge>
                   <Button variant="outline" size="sm">
@@ -151,55 +190,67 @@ export default function OrdersPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Total Amount</p>
-                  <p className="text-lg font-bold">${order.total.toFixed(2)}</p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="p-4 rounded-lg bg-muted/30">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Amount</p>
+                  <p className="text-2xl font-bold">${order.total.toFixed(2)}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Order Date</p>
-                  <p className="text-sm text-gray-600">
+                <div className="p-4 rounded-lg bg-muted/30">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Order Date</p>
+                  <p className="text-sm font-semibold">
                     {new Date(order.createdAt).toLocaleDateString()}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Items</p>
-                  <p className="text-sm text-gray-600">
-                    {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                <div className="p-4 rounded-lg bg-muted/30">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Items</p>
+                  <p className="text-lg font-semibold">
+                    {order.items.reduce((sum, item) => sum + item.quantity, 0)} items
                   </p>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/30">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Status</p>
+                  <p className="text-sm font-semibold capitalize">{order.status.toLowerCase()}</p>
                 </div>
               </div>
               
-              <div className="mt-4">
+              <div className="mb-4">
                 <p className="text-sm font-medium text-gray-900 mb-2">Order Items:</p>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {order.items.map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span>{item.product.name} x{item.quantity}</span>
-                      <span>${(item.price * item.quantity).toFixed(2)}</span>
+                    <div key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                      <div>
+                        <span className="font-medium">{item.product.name}</span>
+                        <span className="text-sm text-gray-600 ml-2">x{item.quantity}</span>
+                      </div>
+                      <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center space-x-2">
-                <span className="text-sm font-medium text-gray-900">Status:</span>
-                <Select
-                  value={order.status}
-                  onValueChange={(value) => updateOrderStatus(order.id, value)}
-                >
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                    <SelectItem value="PROCESSING">Processing</SelectItem>
-                    <SelectItem value="SHIPPED">Shipped</SelectItem>
-                    <SelectItem value="DELIVERED">Delivered</SelectItem>
-                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center justify-between pt-4 border-t">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-900">Update Status:</span>
+                  <Select
+                    value={order.status}
+                    onValueChange={(value) => updateOrderStatus(order.id, value)}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PENDING">Pending</SelectItem>
+                      <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                      <SelectItem value="PROCESSING">Processing</SelectItem>
+                      <SelectItem value="SHIPPED">Shipped</SelectItem>
+                      <SelectItem value="DELIVERED">Delivered</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Order ID: {order.id}</p>
+                </div>
               </div>
             </CardContent>
           </Card>

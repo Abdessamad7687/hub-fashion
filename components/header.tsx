@@ -12,7 +12,7 @@ import { useWishlist } from "@/lib/wishlist-context"
 import { useAuth } from "@/lib/auth-context"
 import MobileNav from "./mobile-nav"
 import CartDrawer from "./cart-drawer"
-import SearchBar from "./search-bar"
+import SearchModal from "./search-modal"
 import MobileSearch from "./mobile-search"
 import { config } from "@/lib/config"
 
@@ -21,6 +21,7 @@ export default function Header() {
   const { wishlist } = useWishlist()
   const { user, isAuthenticated } = useAuth()
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [categories, setCategories] = useState([])
 
   const cartItemsCount = cart.reduce((count, item) => count + item.quantity, 0)
@@ -108,10 +109,16 @@ export default function Header() {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-2">
-            {/* Desktop Search */}
-            <div className="hidden lg:block">
-              <SearchBar className="w-[300px]" />
-            </div>
+            {/* Search Icon */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsSearchOpen(true)}
+              className="hidden lg:flex"
+            >
+              <Search className="h-5 w-5" />
+              <span className="sr-only">Search</span>
+            </Button>
 
             {/* Mobile Search */}
             <MobileSearch />
@@ -166,6 +173,12 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Search Modal */}
+      <SearchModal 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
     </header>
   )
 }

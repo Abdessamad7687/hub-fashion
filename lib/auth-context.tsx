@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('auth-token')
+      const token = localStorage.getItem('token')
       
       // If no token, user is not authenticated
       if (!token) {
@@ -75,13 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Auth check failed, clearing token')
         setUser(null)
         setIsAuthenticated(false)
-        localStorage.removeItem('auth-token')
+        localStorage.removeItem('token')
       }
     } catch (error) {
       console.error("Auth check failed:", error)
       setUser(null)
       setIsAuthenticated(false)
-      localStorage.removeItem('auth-token')
+      localStorage.removeItem('token')
     } finally {
       setIsLoading(false)
     }
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Add a cleanup effect to ensure state consistency
   useEffect(() => {
     if (hasMounted) {
-      const token = localStorage.getItem('auth-token')
+      const token = localStorage.getItem('token')
       if (!token && isAuthenticated) {
         console.log('Token missing but user appears authenticated, clearing state')
         clearAuthState()
@@ -133,16 +133,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const data = await response.json()
+    console.log('Login response data:', data)
 
     // Store token from Authorization header as fallback
     const authHeader = response.headers.get('Authorization')
     console.log('Login response auth header:', authHeader)
+    console.log('All response headers:', Object.fromEntries(response.headers.entries()))
+    
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '')
       console.log('Storing token in localStorage:', token.substring(0, 20) + '...')
-      localStorage.setItem('auth-token', token)
+      console.log('Full token length:', token.length)
+      localStorage.setItem('token', token)
+      console.log('Token stored successfully in localStorage')
+    } else if (data.token) {
+      // Fallback: check if token is in response body
+      console.log('No Authorization header, checking response body for token')
+      console.log('Token from response body:', data.token.substring(0, 20) + '...')
+      localStorage.setItem('token', data.token)
+      console.log('Token stored successfully in localStorage from response body')
     } else {
-      console.warn('No Authorization header in login response')
+      console.warn('No Authorization header or token in response body')
+      console.log('Available headers:', Array.from(response.headers.keys()))
+      console.log('Response data keys:', Object.keys(data))
     }
 
     setUser(data.user)
@@ -180,7 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setUser(null)
       setIsAuthenticated(false)
-      localStorage.removeItem('auth-token')
+      localStorage.removeItem('token')
     }
   }
 
@@ -188,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('Clearing auth state due to inconsistency')
     setUser(null)
     setIsAuthenticated(false)
-    localStorage.removeItem('auth-token')
+    localStorage.removeItem('token')
   }
 
   const updateProfile = async (data: ProfileData) => {
@@ -196,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('Current auth state:', { isAuthenticated, user });
     
     // Get the token from localStorage first
-    const token = localStorage.getItem('auth-token');
+    const token = localStorage.getItem('token');
     console.log('Token from localStorage:', token ? 'Found' : 'Not found');
     
     // If no token, user needs to login
@@ -216,7 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     // Double-check that we still have a token after auth check
-    const currentToken = localStorage.getItem('auth-token');
+    const currentToken = localStorage.getItem('token');
     if (!currentToken) {
       console.log('Token lost during auth check, redirecting to login');
       clearAuthState();

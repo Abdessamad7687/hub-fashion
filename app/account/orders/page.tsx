@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/lib/auth-context"
 import { useOrders } from "@/lib/order-context"
-import { ResponsiveBreadcrumb } from "@/components/responsive-breadcrumb"
 
 export default function OrdersPage() {
   const { isAuthenticated } = useAuth()
@@ -18,11 +17,14 @@ export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    console.log('Orders page useEffect - isAuthenticated:', isAuthenticated);
+    console.log('=== Orders page useEffect ===');
+    console.log('isAuthenticated:', isAuthenticated);
+    console.log('fetchUserOrders function:', typeof fetchUserOrders);
+    
     if (isAuthenticated) {
-      console.log('Fetching user orders...');
+      console.log('User is authenticated, fetching user orders...');
       fetchUserOrders().finally(() => {
-        console.log('Orders fetched, setting loading to false');
+        console.log('Orders fetch completed, setting loading to false');
         setIsLoading(false);
       });
     } else {
@@ -31,7 +33,21 @@ export default function OrdersPage() {
     }
   }, [isAuthenticated, fetchUserOrders])
 
+  const handleRefresh = async () => {
+    console.log('Manually refreshing user orders...');
+    setIsLoading(true);
+    try {
+      await fetchUserOrders();
+    } catch (error) {
+      console.error('Error refreshing orders:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   console.log('Orders page render - orders:', orders, 'isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
+  console.log('Token in localStorage:', typeof window !== 'undefined' && localStorage.getItem('token') ? 'Found' : 'Not found');
+  console.log('Number of orders:', orders.length);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -83,7 +99,15 @@ export default function OrdersPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="container py-6 lg:py-8">
-          <ResponsiveBreadcrumb />
+          <div className="py-4">
+            <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <Link href="/" className="hover:text-foreground">Home</Link>
+              <span>/</span>
+              <Link href="/account" className="hover:text-foreground">My Account</Link>
+              <span>/</span>
+              <span className="text-foreground">Order History</span>
+            </nav>
+          </div>
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="max-w-md mx-auto">
               <div className="mb-6 rounded-full bg-muted/50 p-6 w-fit mx-auto">
@@ -104,21 +128,34 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="container py-6 lg:py-8">
-        <ResponsiveBreadcrumb />
+        <div className="py-4">
+          <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <Link href="/" className="hover:text-foreground">Home</Link>
+            <span>/</span>
+            <Link href="/account" className="hover:text-foreground">My Account</Link>
+            <span>/</span>
+            <span className="text-foreground">Order History</span>
+          </nav>
+        </div>
         
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Button variant="ghost" size="sm" asChild className="p-2">
-              <Link href="/account">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                Order History
-              </h1>
-              <p className="text-muted-foreground">View and track your orders</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" asChild className="p-2">
+                <Link href="/account">
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                  Order History
+                </h1>
+                <p className="text-muted-foreground">View and track your orders</p>
+              </div>
             </div>
+            <Button onClick={handleRefresh} variant="outline" disabled={isLoading}>
+              {isLoading ? "Refreshing..." : "Refresh Orders"}
+            </Button>
           </div>
         </div>
 

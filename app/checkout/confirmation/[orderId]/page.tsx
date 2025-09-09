@@ -55,7 +55,19 @@ export default function OrderConfirmationPage({ params }: { params: { orderId: s
   useEffect(() => {
     const fetchOrder = async () => {
       try {
+        // Get the auth token from localStorage
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          setError('User not authenticated');
+          setIsLoading(false);
+          return;
+        }
+        
         const response = await fetch(`${config.api.baseUrl}/api/orders/${params.orderId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
           credentials: 'include',
         })
 

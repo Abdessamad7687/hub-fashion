@@ -28,8 +28,8 @@ router.get('/', async (req, res) => {
   
   // Search filter
   if (search) where.OR = [
-    { name: { contains: search, mode: 'insensitive' } },
-    { description: { contains: search, mode: 'insensitive' } }
+    { name: { contains: search } },
+    { description: { contains: search } }
   ];
   
   // Size filter - handle both single size and multiple sizes
@@ -75,9 +75,83 @@ router.get('/', async (req, res) => {
   const products = await prisma.product.findMany({
     where,
     orderBy,
-    include: { images: true, sizes: true, colors: true, features: true, category: true }
+    include: { 
+      images: true, 
+      sizes: true, 
+      colors: true, 
+      features: true, 
+      category: true,
+      reviews: {
+        select: {
+          rating: true
+        }
+      }
+    }
   });
-  res.json(products);
+
+  // Calculate average ratings
+  const productsWithRatings = products.map(product => {
+    const ratings = product.reviews.map(review => review.rating);
+    const averageRating = ratings.length > 0 
+      ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length 
+      : 0;
+    
+    return {
+      ...product,
+      averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
+      reviewCount: ratings.length
+    };
+  });
+
+  res.json(productsWithRatings);
+});
+
+// Search products endpoint for live search
+router.get('/search', async (req, res) => {
+  const { q, limit = 10 } = req.query;
+  
+  if (!q || q.trim().length < 2) {
+    return res.json([]);
+  }
+
+  const products = await prisma.product.findMany({
+    where: {
+      OR: [
+        { name: { contains: q } },
+        { description: { contains: q } }
+      ]
+    },
+    take: parseInt(limit),
+    include: { 
+      images: true, 
+      category: true,
+      reviews: {
+        select: {
+          rating: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  // Calculate average ratings and format for search results
+  const searchResults = products.map(product => {
+    const ratings = product.reviews.map(review => review.rating);
+    const averageRating = ratings.length > 0 
+      ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length 
+      : 0;
+    
+    return {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images[0]?.url,
+      averageRating: Math.round(averageRating * 10) / 10,
+      reviewCount: ratings.length
+    };
+  });
+
+  res.json(searchResults);
 });
 
 // Get product by id
